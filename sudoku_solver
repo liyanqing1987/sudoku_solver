@@ -380,6 +380,7 @@ class mainWindow(QMainWindow):
             self.solve_sudoku()
 
         self.show_step()
+        self.current_step = len(self.step_list)-1
 
     def previous_step(self):
         """
