@@ -414,7 +414,6 @@ class mainWindow(QMainWindow):
         if result:
             # Save the init data.
             self.unique_candidate_number_method()
-
             result = self.check_sudoku_result()
 
             if not result:
@@ -510,14 +509,15 @@ class mainWindow(QMainWindow):
         while True:
             time += 1
 
-            # Fill cell with possible numbers.
             if time == 1:
-                self.update_step_list(['', '', '##########', '# 唯一候选数法 #', '##########', '', '> 在单元格中填充所有可能的数字(第' + str(time) + '次)。',])
-            else:
-                self.update_step_list(['', '> 在单元格中填充所有可能的数字(第' + str(time) + '次)。',])
+                self.update_step_list(['', '', '##########', '# 唯一候选数法 #', '##########'])
 
+            # Save the original self.sudoku_table data.
             self.get_sudoku_table_data()
             row_data_dic = self.sudoku_data_dic['row']
+
+            # Fill cell with possible numbers.
+            self.update_step_list(['', '> 在单元格中填充所有可能的数字(第' + str(time) + '次)。'])
             run_pass = self.fill_cell_possible_numbers() 
 
             if not run_pass:
@@ -525,7 +525,6 @@ class mainWindow(QMainWindow):
 
             # Find unique number on every color block.
             self.update_step_list(['', '> 找到每个色块中仅出现一次的数字(第' + str(time) + '次)。'])
-
             self.find_unique_number() 
 
             # If no update on the self.sudoku_table, exit the endless loop.
@@ -534,36 +533,52 @@ class mainWindow(QMainWindow):
             if row_data_dic == self.sudoku_data_dic['row']:
                 break
 
-    def fill_cell_possible_numbers(self):
+    def fill_cell_possible_numbers(self, specified_row=-1, specified_column=-1, specified_block_num=-1):
         """
         For every cell, get all possible numbers (not on the same row/column/block) and fill in.
         """
         for row in range(9):
-            for column in range(9):
-                cell_value = self.sudoku_table.item(row, column).text().strip()
+            if (specified_row == -1) or (specified_row == row):
+                for column in range(9):
+                    if (specified_column == -1) or (specified_column == column):
+                        cell_value = self.sudoku_table.item(row, column).text().strip()
 
-                if not re.match('^[1-9]$', cell_value):
-                    block_num = (row//3)*3 + column//3
-                    possible_number_list = []
-                    cell_value_list = list(cell_value)
+                        if not re.match('^[1-9]$', cell_value):
+                            block_num = (row//3)*3 + column//3
 
-                    for number in range(1,10):
-                        number = str(number)
+                            if (specified_block_num == -1) or (specified_block_num == block_num):
+                                possible_number_list = []
+                                cell_value_list = list(cell_value)
 
-                        if (number not in self.sudoku_data_dic['row'][row]) and (number not in self.sudoku_data_dic['column'][column]) and (number not in self.sudoku_data_dic['block'][block_num]):
-                            if (not cell_value_list) or (number in cell_value_list):
-                                possible_number_list.append(number)
+                                for number in range(1,10):
+                                    number = str(number)
 
-                    if not possible_number_list:
-                        self.update_step_list(['', '    *错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格没有发现可行的数字，原始的数独数据应该是不合法的。'], ['*错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格没有发现可行的数字，原始的数独数据应该是不合法的。',])
-                        return(False)
-                    else:
-                        possible_number_string = ''.join(possible_number_list)
+                                    if (number not in self.sudoku_data_dic['row'][row]) and (number not in self.sudoku_data_dic['column'][column]) and (number not in self.sudoku_data_dic['block'][block_num]):
+                                        if (not cell_value_list) or (number in cell_value_list):
+                                            possible_number_list.append(number)
 
-                        if possible_number_string != cell_value:
-                            self.update_step_list(['    第' + str(row+1) + '行第' + str(column+1) + '列单元格发现可行的数字 "' + str(possible_number_string) + '"。',])
-                            self.sudoku_table.item(row, column).setText(possible_number_string)
-                            self.update_step_list()
+                                if not possible_number_list:
+                                    self.update_step_list(['', '    *错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格没有发现可行的数字，原始的数独数据应该是不合法的。'], ['*错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格没有发现可行的数字，原始的数独数据应该是不合法的。',])
+                                    return(False)
+                                else:
+                                    possible_number_string = ''.join(possible_number_list)
+
+                                    if possible_number_string != cell_value:
+                                        if cell_value_list:
+                                            if (specified_row != -1) or (specified_column != -1) or (specified_block_num != -1):
+                                                self.update_step_list(['        第' + str(row+1) + '行第' + str(column+1) + '列单元格可行的数字更新为 "' + str(possible_number_string) + '"。  (' + str(cell_value) + ' -> ' + str(possible_number_string) + ')',])
+                                            else:
+                                                self.update_step_list(['    第' + str(row+1) + '行第' + str(column+1) + '列单元格可行的数字更新为 "' + str(possible_number_string) + '"。  (' + str(cell_value) + ' -> ' + str(possible_number_string) + ')',])
+                                        else:
+                                            self.update_step_list(['    第' + str(row+1) + '行第' + str(column+1) + '列单元格发现可行的数字 "' + str(possible_number_string) + '"。',])
+
+                                        self.sudoku_table.item(row, column).setText(possible_number_string)
+                                        self.update_step_list()
+
+                                        if len(possible_number_list) == 1:
+                                            self.fill_cell_possible_numbers(specified_row=row)
+                                            self.fill_cell_possible_numbers(specified_column=column)
+                                            self.fill_cell_possible_numbers(specified_block_num=block_num)
 
         return(True)
 
@@ -590,6 +605,11 @@ class mainWindow(QMainWindow):
                             self.update_step_list(['    第' + str(row+1) + '行第' + str(column+1) + '列单元格发现色块' + str(block_num+1) + '中的唯一值 "' + str(cell_value) + '"。'])
                             self.sudoku_table.item(row, column).setText(cell_value)
                             self.update_step_list()
+
+                            self.fill_cell_possible_numbers(specified_row=row)
+                            self.fill_cell_possible_numbers(specified_column=column)
+                            self.fill_cell_possible_numbers(specified_block_num=block_num)
+
                             break
 
     def get_list_number_times(self, number_list, specified_number): 
