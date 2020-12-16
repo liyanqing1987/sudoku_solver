@@ -398,18 +398,30 @@ class mainWindow(QMainWindow):
         result = self.check_sudoku_table_data_validation()
 
         if result:
-            # Save the init data.
-            self.unique_candidate_number_method()
-            result = self.check_sudoku_result()
+            while True:
+                # Save the initial self.sudoku_table data.
+                self.get_sudoku_table_data()
+                row_data_dic = self.sudoku_data_dic['row']
 
-            if not result:
-                self.block_exclusion_method()
+                # Save the init data.
                 self.unique_candidate_number_method()
-
                 result = self.check_sudoku_result()
 
-                if not result:
-                    self.update_step_list(['', '抱歉，解题失败！', '请联系liyanqing1987@163.com并提供数独截图，作者会尽快解决。'], ['抱歉，解题失败！', '请联系liyanqing1987@163.com并提供数独截图，作者会尽快解决。',])
+                if result:
+                    break
+                else:
+                    self.block_exclusion_method()
+                    result = self.check_sudoku_result()
+
+                    if result:
+                        break
+                    else:
+                        # If no update on the self.sudoku_table, exit the endless loop.
+                        self.get_sudoku_table_data()
+
+                        if row_data_dic == self.sudoku_data_dic['row']:
+                            self.update_step_list(['', '抱歉，解题失败！', '请联系liyanqing1987@163.com并提供数独截图，作者会尽快解决。'], ['抱歉，解题失败！', '请联系liyanqing1987@163.com并提供数独截图，作者会尽快解决。',])
+                            break
 
     def check_sudoku_table_data_validation(self):
         """
