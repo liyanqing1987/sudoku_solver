@@ -95,9 +95,6 @@ class mainWindow(QMainWindow):
         generate_advanced_plus_test_data_action = QAction('生成测试数据(高级+)', self)
         generate_advanced_plus_test_data_action.triggered.connect(lambda:self.generate_test_data('advanced_plus'))
 
-        generate_advanced_plus_plus_test_data_action = QAction('生成测试数据(高级++)', self)
-        generate_advanced_plus_plus_test_data_action.triggered.connect(lambda:self.generate_test_data('advanced_plus_plus'))
-
         clear_action = QAction('清空', self)
         clear_action.triggered.connect(self.clear_data)
 
@@ -106,7 +103,6 @@ class mainWindow(QMainWindow):
         setup_menu.addAction(generate_middle_test_data_action)
         setup_menu.addAction(generate_advanced_test_data_action)
         setup_menu.addAction(generate_advanced_plus_test_data_action)
-        setup_menu.addAction(generate_advanced_plus_plus_test_data_action)
         setup_menu.addAction(clear_action)
 
         # Help
@@ -167,17 +163,6 @@ class mainWindow(QMainWindow):
                                             ['4', ' ', ' ', ' ', ' ', '5', ' ', ' ', '8'],
                                             ['2', ' ', ' ', ' ', ' ', ' ', '3', '9', ' '],
                                            ],
-                         'advanced_plus_plus' : [
-                                                 [' ', ' ', ' ', ' ', '1', ' ', ' ', ' ', '2'],
-                                                 [' ', '8', ' ', ' ', '7', '3', ' ', ' ', ' '],
-                                                 [' ', ' ', '7', ' ', ' ', ' ', ' ', ' ', ' '],
-                                                 [' ', '1', ' ', ' ', '9', ' ', ' ', '2', ' '],
-                                                 ['2', ' ', ' ', ' ', ' ', ' ', ' ', '8', ' '],
-                                                 [' ', ' ', ' ', '4', ' ', ' ', '9', ' ', '1'],
-                                                 ['4', ' ', ' ', '5', ' ', ' ', ' ', ' ', '8'],
-                                                 [' ', ' ', '5', ' ', ' ', ' ', '4', '9', ' '],
-                                                 [' ', '6', '8', '9', ' ', ' ', '7', ' ', ' '],
-                                                ],
                         }
 
         test_list = test_list_dic[mode]
