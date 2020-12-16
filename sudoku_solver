@@ -710,6 +710,11 @@ class mainWindow(QMainWindow):
                             row_string = re.sub(str(number), '', row_string)
                             self.sudoku_table.item(row, column).setText(row_string)
                             self.update_step_list()
+
+                            if len(list(row_string)) == 1:
+                                self.fill_cell_possible_numbers(specified_row=row)
+                                self.fill_cell_possible_numbers(specified_column=column)
+                                self.fill_cell_possible_numbers(specified_block_num=block_num)
             elif len(exclusive_dic[number]['column']) == 1:
                 column = exclusive_dic[number]['column'][0]
                 self.update_step_list(['    色块' + str(block_num+1) + '中, 值 "' + str(number) + '" 仅在第' + str(column+1) + '列中。',])
@@ -725,6 +730,11 @@ class mainWindow(QMainWindow):
                             column_string = re.sub(str(number), '', column_string)
                             self.sudoku_table.item(row, column).setText(column_string)
                             self.update_step_list()
+
+                            if len(list(column_string)) == 1:
+                                self.fill_cell_possible_numbers(specified_row=row)
+                                self.fill_cell_possible_numbers(specified_column=column)
+                                self.fill_cell_possible_numbers(specified_block_num=block_num)
     ## Solve Sudoku (end) ##
 
     ## Show Step (start) ##
