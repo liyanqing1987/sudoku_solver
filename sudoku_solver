@@ -334,8 +334,8 @@ class mainWindow(QMainWindow):
         all_step_button = QPushButton('All Steps', self.step_frame)
         all_step_button.clicked.connect(self.all_steps)
 
-        last_step_button = QPushButton('Last Step', self.step_frame)
-        last_step_button.clicked.connect(self.last_step)
+        previous_step_button = QPushButton('Previous Step', self.step_frame)
+        previous_step_button.clicked.connect(self.previous_step)
 
         next_step_button = QPushButton('Next Step', self.step_frame)
         next_step_button.clicked.connect(self.next_step)
@@ -346,7 +346,7 @@ class mainWindow(QMainWindow):
         step_frame_grid = QGridLayout()
 
         step_frame_grid.addWidget(all_step_button, 0, 0, 1, 2)
-        step_frame_grid.addWidget(last_step_button, 1, 0)
+        step_frame_grid.addWidget(previous_step_button, 1, 0)
         step_frame_grid.addWidget(next_step_button, 1, 1)
         step_frame_grid.addWidget(self.step_text, 2, 0, 1, 2)
 
@@ -381,9 +381,9 @@ class mainWindow(QMainWindow):
 
         self.show_step()
 
-    def last_step(self):
+    def previous_step(self):
         """
-        Show last step.
+        Show previous step.
         """
         if not self.step_list:
             self.solve_sudoku()
@@ -545,10 +545,14 @@ class mainWindow(QMainWindow):
                 if not re.match('^[1-9]$', cell_value):
                     block_num = (row//3)*3 + column//3
                     possible_number_list = []
+                    cell_value_list = list(cell_value)
 
                     for number in range(1,10):
-                        if (str(number) not in self.sudoku_data_dic['row'][row]) and (str(number) not in self.sudoku_data_dic['column'][column]) and (str(number) not in self.sudoku_data_dic['block'][block_num]):
-                            possible_number_list.append(str(number))
+                        number = str(number)
+
+                        if (number not in self.sudoku_data_dic['row'][row]) and (number not in self.sudoku_data_dic['column'][column]) and (number not in self.sudoku_data_dic['block'][block_num]):
+                            if (not cell_value_list) or (number in cell_value_list):
+                                possible_number_list.append(number)
 
                     if not possible_number_list:
                         self.update_step_list(['', '    *错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格没有发现可行的数字，原始的数独数据应该是不合法的。'], ['*错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格没有发现可行的数字，原始的数独数据应该是不合法的。',])
