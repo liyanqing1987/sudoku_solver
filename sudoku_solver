@@ -148,8 +148,8 @@ class mainWindow(QMainWindow):
         """
         Update self.sudoku_table with the data from a file
         """
+        self.clear_data()
         (sudoku_file, fileType) = QFileDialog.getOpenFileName(self, 'Load sudoku data', '.', 'Text Files (*.txt)')
-
         row_list = []
 
         with open(sudoku_file, 'r') as SF:
