@@ -10,7 +10,7 @@ import re
 import sys
 import copy
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, qApp, QTextEdit, QTabWidget, QFrame, QGridLayout, QTableWidget, QTableWidgetItem, QPushButton, QLabel, QMessageBox, QHeaderView, QDesktopWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, qApp, QTextEdit, QTabWidget, QFrame, QGridLayout, QTableWidget, QTableWidgetItem, QPushButton, QLabel, QMessageBox, QHeaderView, QDesktopWidget, QFileDialog
 from PyQt5.QtGui import QBrush, QFont, QTextCursor, QColor
 from PyQt5.QtCore import Qt
 
@@ -76,10 +76,18 @@ class mainWindow(QMainWindow):
         menu_bar = self.menuBar()
 
         # File
+        save_action = QAction('保存', self)
+        save_action.triggered.connect(self.save_data)
+
+        load_action = QAction('载入', self)
+        load_action.triggered.connect(self.load_data)
+
         exit_action = QAction('退出', self)
         exit_action.triggered.connect(qApp.quit)
 
         file_menu = menu_bar.addMenu('文件')
+        file_menu.addAction(save_action)
+        file_menu.addAction(load_action)
         file_menu.addAction(exit_action)
 
         # Setup
@@ -111,6 +119,56 @@ class mainWindow(QMainWindow):
 
         help_menu = menu_bar.addMenu('帮助')
         help_menu.addAction(about_action)
+
+    def save_data(self):
+        """
+        Save self.sudoku_table data into a file.
+        """
+        # Check the original data valid or not.
+        result = self.check_sudoku_table_data_validation()
+
+        if result:
+            (sudoku_file, fileType) = QFileDialog.getSaveFileName(self, 'Save sudoku data', '.', 'Text Files (*.txt)')
+
+            self.get_sudoku_table_data()
+
+            with open(sudoku_file, 'w') as SF:
+                for (row, column_list) in enumerate(self.sudoku_data_dic['row']):
+                    row_string = ''
+
+                    for (column, cell_value) in enumerate(column_list):
+                        if cell_value:
+                            row_string = str(row_string) + str(cell_value)
+                        else:
+                            row_string = str(row_string) + ' '
+
+                    SF.write(str(row_string) + '\n')
+
+    def load_data(self):
+        """
+        Update self.sudoku_table with the data from a file
+        """
+        (sudoku_file, fileType) = QFileDialog.getOpenFileName(self, 'Load sudoku data', '.', 'Text Files (*.txt)')
+
+        row_list = []
+
+        with open(sudoku_file, 'r') as SF:
+            for line in SF.readlines():
+                line = re.sub('\n', '', line)
+                line_list = list(line)
+
+                if len(line_list) == 9:
+                    row_list.append(line_list)
+                else:
+                    error_message = """*错误*：输入的sudoku文件如下行格式错误，必须有9个字符位（含空格）。
+""" + str(line)
+                    QMessageBox.critical(self, 'Sudoku Solver', error_message)
+
+        if len(row_list) == 9:
+            self.update_sudoku_table(row_list)
+        else:
+            error_message = '*错误*：输入的sudoku文件格式错误，必须有9行字符。'
+            QMessageBox.critical(self, 'Sudoku Solver', error_message)
 
     def generate_test_data(self, mode):
         """
@@ -761,7 +819,7 @@ class mainWindow(QMainWindow):
                 elif len(list(cell_value)) == 1:
                     self.sudoku_table.item(row, column).setFont(QFont('Times', 24, QFont.Black))
 
-                    if not self.step_list[0]['row_list'][row][column]:
+                    if self.step_list and (not self.step_list[0]['row_list'][row][column]):
                         self.sudoku_table.item(row, column).setForeground(QBrush(QColor(0, 255, 0)))
      
     def update_step_text(self, step_text_list):
