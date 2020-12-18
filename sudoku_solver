@@ -66,7 +66,7 @@ class mainWindow(QMainWindow):
 
         # Draw GUI.
         self.setWindowTitle('Sudoku Solver')
-        self.resize(955, 700)
+        self.resize(1010, 700)
         set_window_center(self)
 
     def gen_menu_bar(self):
@@ -125,24 +125,23 @@ class mainWindow(QMainWindow):
         Save self.sudoku_table data into a file.
         """
         # Check the original data valid or not.
-        result = self.check_sudoku_table_data_validation()
-
-        if result:
+        if self.check_sudoku_table_data_validation():
             (sudoku_file, fileType) = QFileDialog.getSaveFileName(self, 'Save sudoku data', '.', 'Text Files (*.txt)')
 
-            self.get_sudoku_table_data()
+            if sudoku_file:
+                self.get_sudoku_table_data()
 
-            with open(sudoku_file, 'w') as SF:
-                for (row, column_list) in enumerate(self.sudoku_data_dic['row']):
-                    row_string = ''
+                with open(sudoku_file, 'w') as SF:
+                    for (row, column_list) in enumerate(self.sudoku_data_dic['row']):
+                        row_string = ''
 
-                    for (column, cell_value) in enumerate(column_list):
-                        if cell_value:
-                            row_string = str(row_string) + str(cell_value)
-                        else:
-                            row_string = str(row_string) + ' '
+                        for (column, cell_value) in enumerate(column_list):
+                            if cell_value:
+                                row_string = str(row_string) + str(cell_value)
+                            else:
+                                row_string = str(row_string) + ' '
 
-                    SF.write(str(row_string) + '\n')
+                        SF.write(str(row_string) + '\n')
 
     def load_data(self):
         """
@@ -150,25 +149,27 @@ class mainWindow(QMainWindow):
         """
         self.clear_data()
         (sudoku_file, fileType) = QFileDialog.getOpenFileName(self, 'Load sudoku data', '.', 'Text Files (*.txt)')
-        row_list = []
 
-        with open(sudoku_file, 'r') as SF:
-            for line in SF.readlines():
-                line = re.sub('\n', '', line)
-                line_list = list(line)
+        if sudoku_file:
+            row_list = []
 
-                if len(line_list) == 9:
-                    row_list.append(line_list)
-                else:
-                    error_message = """*错误*：输入的sudoku文件如下行格式错误，必须有9个字符位（含空格）。
+            with open(sudoku_file, 'r') as SF:
+                for line in SF.readlines():
+                    line = re.sub('\n', '', line)
+                    line_list = list(line)
+
+                    if len(line_list) == 9:
+                        row_list.append(line_list)
+                    else:
+                        error_message = """*错误*：输入的sudoku文件如下行格式错误，必须有9个字符位（含空格）。
 """ + str(line)
-                    QMessageBox.critical(self, 'Sudoku Solver', error_message)
+                        QMessageBox.critical(self, 'Sudoku Solver', error_message)
 
-        if len(row_list) == 9:
-            self.update_sudoku_table(row_list)
-        else:
-            error_message = '*错误*：输入的sudoku文件格式错误，必须有9行字符。'
-            QMessageBox.critical(self, 'Sudoku Solver', error_message)
+            if len(row_list) == 9:
+                self.update_sudoku_table(row_list)
+            else:
+                error_message = '*错误*：输入的sudoku文件格式错误，必须有9行字符。'
+                QMessageBox.critical(self, 'Sudoku Solver', error_message)
 
     def generate_test_data(self, mode):
         """
@@ -236,7 +237,6 @@ class mainWindow(QMainWindow):
     def clear_data(self):
         self.gen_sudoku_table()
         self.step_text.setText('')
-
         self.step_list = []
         self.current_step = -1
 
@@ -274,7 +274,7 @@ class mainWindow(QMainWindow):
    三链列删减法
    关键数删减法
 
-      本工具 Sudoku Solver是一个专为数独设计的解题器，主要采用如上的候选数法（唯一候选数法）和直观法（区块摒除法），可以解决绝大部分的数独题目。
+      本工具 Sudoku Solver是一个专为数独设计的解题器，主要采用如上的候选数法（唯一候选数法，关键数删减法）和直观法（区块摒除法），可以解决绝大部分的数独题目。
       Sudoku Solver支持一步式解题及分布式解题，不但可以帮助用户得到数独解题结果，还可以帮助用户了解数独的解题思路。
       如下是Sudoku Solver的一些基本概念：
 1. Sudoku Solver提供一个空白界面，用户需要自己填入初始的数据。（也可从“设置”菜单栏中载入测试数据）
@@ -315,8 +315,8 @@ class mainWindow(QMainWindow):
 
         main_tab_grid.setRowStretch(0, 6)
         main_tab_grid.setRowStretch(1, 1)
-        main_tab_grid.setColumnStretch(0, 5)
-        main_tab_grid.setColumnStretch(1, 4)
+        main_tab_grid.setColumnStretch(0, 10)
+        main_tab_grid.setColumnStretch(1, 9)
 
         self.main_tab.setLayout(main_tab_grid)
 
@@ -451,50 +451,63 @@ class mainWindow(QMainWindow):
     def solve_sudoku(self):
         """
         Solve the sudoku.
+        1. fill_cell_possible_numbers (Fill empty cells with possible numbers). 
+           If meet error, show error message and exit, else, continue.
+        2. Try to solve sudoku with unique_candidate_number_method and block_exclusion_method.
+           If sudoku is solved, show pass message and exit, else, continue.
+        3. Try to solve sudoku with key_number_reduction_method (unique_candidate_number_method and block_exclusion_method will also be repeated).
+           If sudoku is solved, show pass message and exit, else, show suggestion and exit.
         """
         # Check the original data valid or not.
-        result = self.check_sudoku_table_data_validation()
+        if self.check_sudoku_table_data_validation():
+            self.update_step_list(['#############', '#  空白单元格初始化  #', '#############'])
+            self.update_step_list(['', '> 在空白单元格中填充所有可能的数字。'])
 
-        if result:
-            while True:
-                # Save the initial self.sudoku_table data.
-                self.get_sudoku_table_data()
-                row_data_dic = self.sudoku_data_dic['row']
-
-                # Save the init data.
-                self.unique_candidate_number_method()
-                result = self.check_sudoku_result()
-
-                if result:
-                    break
+            # Fill empty cells with possible numbers.
+            if not self.fill_cell_possible_numbers():
+                # If meet error on self.fill_cell_possible_numbers. return.
+                return(False)
+            else:
+                if self.check_sudoku_result():
+                    # If sudoku is solved, return.
+                    return(True)
                 else:
-                    self.block_exclusion_method()
-                    result = self.check_sudoku_result()
-
-                    if result:
-                        break
+                    # If sudoku is not solved, try to solve sudoku with unique_candidate_number_method and block_exclusion_method in loop.
+                    if self.solve_sudoku_with_basic_methods():
+                        # If sudoku is solved, return.
+                        return(True)
                     else:
-                        # If no update on the self.sudoku_table, exit the endless loop.
-                        self.get_sudoku_table_data()
-
-                        if row_data_dic == self.sudoku_data_dic['row']:
+                        # If unique_candidate_number_method and block_exclusion_method cannot solve the sudoku, try key_number_reduction_method.
+                        if self.key_number_reduction_method():
+                            # If sudoku is solved, return.
+                            return(True)
+                        else:
+                            # If sudoku is not solved, return.
                             self.update_step_list(['', '抱歉，解题失败！', '请联系liyanqing1987@163.com并提供数独截图，作者会尽快解决。'], ['抱歉，解题失败！', '请联系liyanqing1987@163.com并提供数独截图，作者会尽快解决。',])
-                            break
 
     def check_sudoku_table_data_validation(self):
         """
         Check self.sudoku_table data valid or not.
         """
-        self.update_step_list(['> 检查输入数据合法性。',])
+        find_valid_data = False
 
-        # Only empty or an integer is valid.
         for row in range(9):
             for column in range(9):
                 cell_value = self.sudoku_table.item(row, column).text().strip()
 
-                if (not re.match('^$', cell_value)) and (not re.match('^[1-9]$', cell_value)):
-                    self.update_step_list(['*错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格的值"' + str(cell_value) + '"非法, 必须是空行，或者1-9之间的数字。'], ['*错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格的值"' + str(cell_value) + '"非法, 必须是空行，或者1-9之间的数字。',])
+                if re.match('^\s*$', cell_value):
+                    pass
+                elif re.match('^[1-9]$', cell_value):
+                    find_valid_data = True
+                else:
+                    error_message = '*错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格的值"' + str(cell_value) + '"非法, 必须是空行，或者1-9之间的数字。'
+                    QMessageBox.critical(self, 'Sudoku Solver', error_message)
                     return(False)
+
+        if not find_valid_data:
+            error_message = '*错误*：不能保存空的sudoku数据。'
+            QMessageBox.critical(self, 'Sudoku Solver', error_message)
+            return(False)
 
         # For every row/column/block, 1-9 can only appear once.
         self.get_sudoku_table_data()
@@ -502,13 +515,15 @@ class mainWindow(QMainWindow):
         for (row, row_list) in enumerate(self.sudoku_data_dic['row']):
             for (column, cell_value) in enumerate(row_list):
                 if cell_value and (cell_value in row_list[0:column]):
-                    self.update_step_list(['    *错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格的值"' + str(cell_value) + '"在第' + str(row+1) + '行重复出现。',], ['*错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格的值"' + str(cell_value) + '"在第' + str(row+1) + '行重复出现。',])
+                    error_message = '*错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格的值"' + str(cell_value) + '"在第' + str(row+1) + '行重复出现。'
+                    QMessageBox.critical(self, 'Sudoku Solver', error_message)
                     return(False)
 
         for (column, column_list) in enumerate(self.sudoku_data_dic['column']):
             for (row, cell_value) in enumerate(column_list):
                 if cell_value and (cell_value in column_list[0:row]):
-                    self.update_step_list(['    *错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格的值"' + str(cell_value) + '"在第' + str(column+1) + '列重复出现。',], ['*错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格的值"' + str(cell_value) + '"在第' + str(column+1) + '列重复出现。',])
+                    error_message = '*错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格的值"' + str(cell_value) + '"在第' + str(column+1) + '列重复出现。'
+                    QMessageBox.critical(self, 'Sudoku Solver', error_message)
                     return(False)
 
         for (block_num, block_list) in enumerate(self.sudoku_data_dic['block']):
@@ -517,28 +532,15 @@ class mainWindow(QMainWindow):
                 column = (block_num%3)*3 + i%3
 
                 if cell_value and (cell_value in block_list[0:i]):
-                    self.update_step_list(['    *错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格的值"' + str(cell_value) + '"在第' + str(block_num+1) + '色块重复出现。',], ['*错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格的值"' + str(cell_value) + '"在第' + str(block_num+1) + '色块重复出现。',])
+                    error_message = '*错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格的值"' + str(cell_value) + '"在第' + str(block_num+1) + '色块重复出现。'
+                    QMessageBox.critical(self, 'Sudoku Solver', error_message)
                     return(False)
 
         return(True)
 
-    def update_step_list(self, step_text_list=[], message_text_list=[]):
-        """
-        Save current 'row_list'/'step_text'/'message_text' information into self.step_list.
-        """
-        self.get_sudoku_table_data()
-
-        step_dic = {
-                    'row_list' : copy.deepcopy(self.sudoku_data_dic['row']),
-                    'step_text' : copy.deepcopy(step_text_list),
-                    'message_text' : copy.deepcopy(message_text_list),
-                   }
-
-        self.step_list.append(step_dic)
-
     def get_sudoku_table_data(self):
         """
-        Parse self.sudoku_table and get all cell numbers.
+        Parse self.sudoku_table and get all cell values.
         """
         self.sudoku_data_dic = {
                                 'row' : [['' for i in range(9)] for j in range(9)],
@@ -555,39 +557,19 @@ class mainWindow(QMainWindow):
                 block_num = (row//3)*3 + column//3
                 self.sudoku_data_dic['block'][block_num].append(cell_value)
 
-    def unique_candidate_number_method(self):
+    def update_step_list(self, step_text_list=[], message_text_list=[]):
         """
-        唯一候选数法。
-        唯一候选数法解题的过程就是逐渐排除不合适的候选数的过程，当某个宫格的候选数排除到只有一个数的时候，那么这个数就是该宫格的唯一的一个候选数，这个候选数就是解了。
+        Save current 'row_list'/'step_text'/'message_text' information into self.step_list.
         """
-        time = 0
+        self.get_sudoku_table_data()
 
-        while True:
-            time += 1
+        step_dic = {
+                    'row_list' : copy.deepcopy(self.sudoku_data_dic['row']),
+                    'step_text' : copy.deepcopy(step_text_list),
+                    'message_text' : copy.deepcopy(message_text_list),
+                   }
 
-            if time == 1:
-                self.update_step_list(['', '', '##########', '# 唯一候选数法 #', '##########'])
-
-            # Save the original self.sudoku_table data.
-            self.get_sudoku_table_data()
-            row_data_dic = self.sudoku_data_dic['row']
-
-            # Fill cell with possible numbers.
-            self.update_step_list(['', '> 在单元格中填充所有可能的数字(第' + str(time) + '次)。'])
-            run_pass = self.fill_cell_possible_numbers() 
-
-            if not run_pass:
-                break
-
-            # Find unique number on every color block.
-            self.update_step_list(['', '> 找到每个色块中仅出现一次的数字(第' + str(time) + '次)。'])
-            self.find_unique_number() 
-
-            # If no update on the self.sudoku_table, exit the endless loop.
-            self.get_sudoku_table_data()
-
-            if row_data_dic == self.sudoku_data_dic['row']:
-                break
+        self.step_list.append(step_dic)
 
     def fill_cell_possible_numbers(self, specified_row=-1, specified_column=-1, specified_block_num=-1):
         """
@@ -599,6 +581,7 @@ class mainWindow(QMainWindow):
                     if (specified_column == -1) or (specified_column == column):
                         cell_value = self.sudoku_table.item(row, column).text().strip()
 
+                        # Only fill the cell whose value is not a single number.
                         if not re.match('^[1-9]$', cell_value):
                             block_num = (row//3)*3 + column//3
 
@@ -609,10 +592,12 @@ class mainWindow(QMainWindow):
                                 for number in range(1,10):
                                     number = str(number)
 
+                                    # If a number is not on the same row/column/block, them append it into the possible number list.
                                     if (number not in self.sudoku_data_dic['row'][row]) and (number not in self.sudoku_data_dic['column'][column]) and (number not in self.sudoku_data_dic['block'][block_num]):
                                         if (not cell_value_list) or (number in cell_value_list):
                                             possible_number_list.append(number)
 
+                                # If not find any possible number, show error message.
                                 if not possible_number_list:
                                     self.update_step_list(['', '    *错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格没有发现可行的数字，原始的数独数据应该是不合法的。'], ['*错误*: 第' + str(row+1) + '行第' + str(column+1) + '列单元格没有发现可行的数字，原始的数独数据应该是不合法的。',])
                                     return(False)
@@ -631,54 +616,18 @@ class mainWindow(QMainWindow):
                                         self.sudoku_table.item(row, column).setText(possible_number_string)
                                         self.update_step_list()
 
+                                        # For some cell, once the possible number is limited to only one, then re-count possible numbers for the cells on the same row/column/block.
                                         if len(possible_number_list) == 1:
-                                            self.fill_cell_possible_numbers(specified_row=row)
-                                            self.fill_cell_possible_numbers(specified_column=column)
-                                            self.fill_cell_possible_numbers(specified_block_num=block_num)
+                                            if not self.fill_cell_possible_numbers(specified_row=row):
+                                                return(False)
+
+                                            if not self.fill_cell_possible_numbers(specified_column=column):
+                                                return(False)
+
+                                            if not self.fill_cell_possible_numbers(specified_block_num=block_num):
+                                                return(False)
 
         return(True)
-
-    def find_unique_number(self):
-        """
-        If a number in the color block only appears once, then the cell where the number is located can determine the unique value.
-        """
-        for row in range(9):
-            for column in range(9):
-                cell_values = self.sudoku_table.item(row, column).text()
-                cell_value_list = list(cell_values)
-
-                if len(cell_value_list) > 1:
-                    block_num = (row//3)*3 + column//3
-                    block_number_list = []
-
-                    for block_number_string in self.sudoku_data_dic['block'][block_num]:
-                        block_number_list.extend(list(block_number_string))
-
-                    for cell_value in cell_value_list:
-                        cell_value_appear_times = self.get_list_number_times(block_number_list, cell_value)
-                   
-                        if cell_value_appear_times == 1:    
-                            self.update_step_list(['    第' + str(row+1) + '行第' + str(column+1) + '列单元格发现色块' + str(block_num+1) + '中的唯一值 "' + str(cell_value) + '"。'])
-                            self.sudoku_table.item(row, column).setText(cell_value)
-                            self.update_step_list()
-
-                            self.fill_cell_possible_numbers(specified_row=row)
-                            self.fill_cell_possible_numbers(specified_column=column)
-                            self.fill_cell_possible_numbers(specified_block_num=block_num)
-
-                            break
-
-    def get_list_number_times(self, number_list, specified_number): 
-        """
-        How many times specified_number appears on number_list.
-        """
-        times = 0
-
-        for number in number_list:
-            if number == specified_number:
-                times += 1
-
-        return(times)
 
     def check_sudoku_result(self):
         """
@@ -712,17 +661,118 @@ class mainWindow(QMainWindow):
 
         return(True)
 
+    def solve_sudoku_with_basic_methods(self):
+        """
+        Try to solve sudoku with unique_candidate_number_method and block_exclusion_method in loop.
+        """
+        while True:
+            # Save the initial self.sudoku_table data.
+            self.get_sudoku_table_data()
+            row_data_dic = self.sudoku_data_dic['row']
+
+            # Save the init data.
+            if not self.unique_candidate_number_method():
+                # If self.unique_candidate_number_method meet error, return False.
+                return(False)
+            else:
+                if self.check_sudoku_result():
+                    # If sudoku is solved, return True.
+                    return(True)
+                else:
+                    # If sudoku is not solved, try block_exclusion_method.
+                    if not self.block_exclusion_method():
+                        # If self.block_exclusion_method meet error, return False.
+                        return(False)
+                    else:
+                        if self.check_sudoku_result():
+                            # If sudoku is solved, return True.
+                            return(True)
+                        else:
+                            # If sudoku is not solved, and no update on the self.sudoku_table afte the two methods, exit the endless loop.
+                            self.get_sudoku_table_data()
+
+                            if row_data_dic == self.sudoku_data_dic['row']:
+                                return(False)
+
+    def unique_candidate_number_method(self):
+        """
+        唯一候选数法。
+        唯一候选数法解题的过程就是逐渐排除不合适的候选数的过程，当某个宫格的候选数排除到只有一个数的时候，那么这个数就是该宫格的唯一的一个候选数，这个候选数就是解了。
+        """
+        self.update_step_list(['', '', '##########', '# 唯一候选数法 #', '##########'])
+
+        time = 0
+
+        while True:
+            # Save the original self.sudoku_table data.
+            self.get_sudoku_table_data()
+            row_data_dic = self.sudoku_data_dic['row']
+
+            # Find unique number on every color block.
+            time += 1
+            self.update_step_list(['', '> 找到每个色块中仅出现一次的数字。  (第' + str(time) + '次)'])
+
+            if not self.find_unique_number():
+                return(False)
+            else:
+                # If no update on the self.sudoku_table, exit the endless loop.
+                self.get_sudoku_table_data()
+
+                if row_data_dic == self.sudoku_data_dic['row']:
+                    break
+
+        return(True)
+
+    def find_unique_number(self):
+        """
+        If a number in the color block only appears once, then the cell where the number is located can determine the unique value.
+        """
+        for row in range(9):
+            for column in range(9):
+                cell_value = self.sudoku_table.item(row, column).text()
+                cell_value_list = list(cell_value)
+
+                # Only check the cell who have more than one number.
+                if len(cell_value_list) > 1:
+                    block_num = (row//3)*3 + column//3
+                    block_number_strings = ''
+
+                    for block_number_string in self.sudoku_data_dic['block'][block_num]:
+                        block_number_strings = str(block_number_strings) + str(block_number_string)
+
+                    for number in cell_value_list:
+                        if block_number_strings.count(number) == 1:    
+                            self.update_step_list(['    色块' + str(block_num+1) + ', 第' + str(row+1) + '行第' + str(column+1) + '列单元格发现色块中的唯一值 "' + str(number) + '"。  (' + str(cell_value) + ' -> ' + str(number) + ')'])
+                            self.sudoku_table.item(row, column).setText(number)
+                            self.update_step_list()
+
+                            # For some cell, once the possible number is limited to only one, then re-count possible numbers for the cells on the same row/column/block.
+                            if not self.fill_cell_possible_numbers(specified_row=row):
+                                return(False)
+
+                            if not self.fill_cell_possible_numbers(specified_column=column):
+                                return(False)
+
+                            if not self.fill_cell_possible_numbers(specified_block_num=block_num):
+                                return(False)
+
+                            break
+
+        return(True)
+
     def block_exclusion_method(self):
         """
         区块摒除法。
-        在色块中，如果某一数值仅出现在某行或某列中，那么这一行或者这一列中其它色块的数据都可以排除掉这个数
-值。
+        在色块中，如果某一数值仅出现在某行或某列中，那么这一行或者这一列中其它色块的数据都可以排除掉这个数值。
         """
         self.update_step_list(['', '', '#########', '# 区块摒除法 #', '#########'])
         self.get_sudoku_table_data()
 
         for block_num in range(9):
-            self.parse_block_num_with_exclusion(block_num, self.sudoku_data_dic['block'][block_num])
+            if not self.parse_block_num_with_exclusion(block_num, self.sudoku_data_dic['block'][block_num]):
+                return(False)
+
+        return(True)
 
     def parse_block_num_with_exclusion(self, block_num, block_list):
         """
@@ -732,6 +782,7 @@ class mainWindow(QMainWindow):
 
         exclusive_dic = {}
 
+        # Check cells who have more than one number.
         for i in range(9):
             number_list = list(block_list[i])
 
@@ -749,10 +800,11 @@ class mainWindow(QMainWindow):
                     else:
                         exclusive_dic.setdefault(number, {'row' : [row,], 'column' : [column,]})
 
+        # Find the only number on the block.
         for number in exclusive_dic.keys():
             if len(exclusive_dic[number]['row']) == 1:
                 row = exclusive_dic[number]['row'][0]
-                self.update_step_list(['    色块' + str(block_num+1) + '中, 值 "' + str(number) + '" 仅在第' + str(row+1) + '行中。',])
+                self.update_step_list(['    色块' + str(block_num+1) + ', 值 "' + str(number) + '" 仅出现在第' + str(row+1) + '行中。',])
 
                 block_column_list = [(block_num%3)*3, (block_num%3)*3+1, (block_num%3)*3+2]
 
@@ -767,12 +819,17 @@ class mainWindow(QMainWindow):
                             self.update_step_list()
 
                             if len(list(row_string)) == 1:
-                                self.fill_cell_possible_numbers(specified_row=row)
-                                self.fill_cell_possible_numbers(specified_column=column)
-                                self.fill_cell_possible_numbers(specified_block_num=block_num)
+                                if not self.fill_cell_possible_numbers(specified_row=row):
+                                    return(False)
+
+                                if not self.fill_cell_possible_numbers(specified_column=column):
+                                    return(False)
+
+                                if not self.fill_cell_possible_numbers(specified_block_num=block_num):
+                                    return(False)
             elif len(exclusive_dic[number]['column']) == 1:
                 column = exclusive_dic[number]['column'][0]
-                self.update_step_list(['    色块' + str(block_num+1) + '中, 值 "' + str(number) + '" 仅在第' + str(column+1) + '列中。',])
+                self.update_step_list(['    色块' + str(block_num+1) + ', 值 "' + str(number) + '" 仅出现在第' + str(column+1) + '列中。',])
 
                 block_row_list = [(block_num//3)*3, (block_num//3)*3+1, (block_num//3)*3+2]
 
@@ -787,9 +844,61 @@ class mainWindow(QMainWindow):
                             self.update_step_list()
 
                             if len(list(column_string)) == 1:
-                                self.fill_cell_possible_numbers(specified_row=row)
-                                self.fill_cell_possible_numbers(specified_column=column)
-                                self.fill_cell_possible_numbers(specified_block_num=block_num)
+                                if not self.fill_cell_possible_numbers(specified_row=row):
+                                    return(False)
+
+                                if not self.fill_cell_possible_numbers(specified_column=column):
+                                    return(False)
+
+                                if not self.fill_cell_possible_numbers(specified_block_num=block_num):
+                                    return(False)
+
+        return(True)
+
+    def key_number_reduction_method(self):
+        """
+        关键数删减法。
+        关键数删减法就是在后期找到一个数，这个数在行（或列，九宫格）仅出现两次的数字。我们假定这个数在其中一个宫格类，继续求解，如果发生错误，则确定我们的假设错误。如果继续求解仍然出现困难，不妨假设这个数在另外一个宫格，看能不能得到错误。这就是关键数删减法。
+        """
+        self.update_step_list(['', '', '##########', '# 关键数删减法 #', '##########'])
+
+        unsolved_data_list = self.sort_sudoku_unsolved_data()
+
+        for unsolved_data_dic in unsolved_data_list:
+            cell_value = unsolved_data_dic['cell_value']
+            cell_row = unsolved_data_dic['cell_row']
+            cell_column = unsolved_data_dic['cell_column']
+
+            for key_number in list(cell_value):
+                pass
+
+        if self.check_sudoku_result():
+            return(True)
+
+    def sort_sudoku_unsolved_data(self):
+        """
+        parse unsolved sudoku data, sort them with the number of cell possible numbers.
+        """
+        self.update_step_list(['', '> 遍历未解的单元格，按照每个单元格可能数字的多少排序。'])
+
+        self.get_sudoku_table_data()
+        unsolved_data_list = []
+
+        for (row, row_list) in enumerate(self.sudoku_data_dic['row']):
+            for (column, cell_value) in enumerate(row_list):
+                if len(list(cell_value)) > 1:
+                    unsolved_cell_dic = {'cell_value' : cell_value, 'cell_row' : row, 'cell_column' : column}
+
+                    if not unsolved_data_list:
+                        unsolved_data_list.append(unsolved_cell_dic)
+                    else:
+                        for (i, cell_dic) in enumerate(unsolved_data_list):
+                            if len(list(cell_dic['cell_value'])) > len(list(cell_value)):
+                                unsolved_data_list.insert(i, unsolved_cell_dic)
+                                break
+
+        return(unsolved_data_list)
+
     ## Solve Sudoku (end) ##
 
     ## Show Step (start) ##
