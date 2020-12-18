@@ -618,13 +618,7 @@ class mainWindow(QMainWindow):
 
                                         # For some cell, once the possible number is limited to only one, then re-count possible numbers for the cells on the same row/column/block.
                                         if len(possible_number_list) == 1:
-                                            if not self.fill_cell_possible_numbers(specified_row=row):
-                                                return(False)
-
-                                            if not self.fill_cell_possible_numbers(specified_column=column):
-                                                return(False)
-
-                                            if not self.fill_cell_possible_numbers(specified_block_num=block_num):
+                                            if (not self.fill_cell_possible_numbers(specified_row=row)) or (not self.fill_cell_possible_numbers(specified_column=column)) or (not self.fill_cell_possible_numbers(specified_block_num=block_num)):
                                                 return(False)
 
         return(True)
@@ -747,13 +741,7 @@ class mainWindow(QMainWindow):
                             self.update_step_list()
 
                             # For some cell, once the possible number is limited to only one, then re-count possible numbers for the cells on the same row/column/block.
-                            if not self.fill_cell_possible_numbers(specified_row=row):
-                                return(False)
-
-                            if not self.fill_cell_possible_numbers(specified_column=column):
-                                return(False)
-
-                            if not self.fill_cell_possible_numbers(specified_block_num=block_num):
+                            if (not self.fill_cell_possible_numbers(specified_row=row)) or (not self.fill_cell_possible_numbers(specified_column=column)) or (not self.fill_cell_possible_numbers(specified_block_num=block_num)):
                                 return(False)
 
                             break
@@ -819,13 +807,7 @@ class mainWindow(QMainWindow):
                             self.update_step_list()
 
                             if len(list(row_string)) == 1:
-                                if not self.fill_cell_possible_numbers(specified_row=row):
-                                    return(False)
-
-                                if not self.fill_cell_possible_numbers(specified_column=column):
-                                    return(False)
-
-                                if not self.fill_cell_possible_numbers(specified_block_num=block_num):
+                                if (not self.fill_cell_possible_numbers(specified_row=row)) or (not self.fill_cell_possible_numbers(specified_column=column)) or (not self.fill_cell_possible_numbers(specified_block_num=block_num)):
                                     return(False)
             elif len(exclusive_dic[number]['column']) == 1:
                 column = exclusive_dic[number]['column'][0]
@@ -844,13 +826,7 @@ class mainWindow(QMainWindow):
                             self.update_step_list()
 
                             if len(list(column_string)) == 1:
-                                if not self.fill_cell_possible_numbers(specified_row=row):
-                                    return(False)
-
-                                if not self.fill_cell_possible_numbers(specified_column=column):
-                                    return(False)
-
-                                if not self.fill_cell_possible_numbers(specified_block_num=block_num):
+                                if (not self.fill_cell_possible_numbers(specified_row=row)) or (not self.fill_cell_possible_numbers(specified_column=column)) or (not self.fill_cell_possible_numbers(specified_block_num=block_num)):
                                     return(False)
 
         return(True)
@@ -862,18 +838,40 @@ class mainWindow(QMainWindow):
         """
         self.update_step_list(['', '', '##########', '# 关键数删减法 #', '##########'])
 
+        last_step_list = copy.deepcopy(self.step_list)
+        last_row_list = copy.deepcopy(self.step_list[-1]['row_list'])
         unsolved_data_list = self.sort_sudoku_unsolved_data()
 
         for unsolved_data_dic in unsolved_data_list:
             cell_value = unsolved_data_dic['cell_value']
             cell_row = unsolved_data_dic['cell_row']
             cell_column = unsolved_data_dic['cell_column']
+            cell_block_num = (cell_row//3)*3 + cell_column//3
 
             for key_number in list(cell_value):
-                pass
+                self.step_list = copy.deepcopy(last_step_list)
+                self.update_step_list(['', '    第' + str(cell_row+1) + '行第' + str(cell_column+1) + '列，尝试数字' + str(key_number) + '。  （' + str(cell_value) + ' -> ' + str(key_number) + '）'])
+                last_step_list = copy.deepcopy(self.step_list)
 
-        if self.check_sudoku_result():
-            return(True)
+                self.update_sudoku_table(last_row_list)
+                self.sudoku_table.item(cell_row, cell_column).setText(key_number)
+                self.update_step_list()
+               
+                if (not self.fill_cell_possible_numbers(specified_row=cell_row)) or (not self.fill_cell_possible_numbers(specified_column=cell_column)) or (not self.fill_cell_possible_numbers(specified_block_num=cell_block_num)):
+                    self.step_list = copy.deepcopy(last_step_list)
+                    self.update_step_list(['    尝试失败（尝试数字不合理）',])
+                    last_step_list = copy.deepcopy(self.step_list)
+                    continue
+
+                if self.solve_sudoku_with_basic_methods():
+                    return(True)
+                else:
+                    self.step_list = copy.deepcopy(last_step_list)
+                    self.update_step_list(['    尝试失败（找不到最终解）',])
+                    last_step_list = copy.deepcopy(self.step_list)
+                    continue
+
+        return(False)
 
     def sort_sudoku_unsolved_data(self):
         """
@@ -898,7 +896,6 @@ class mainWindow(QMainWindow):
                                 break
 
         return(unsolved_data_list)
-
     ## Solve Sudoku (end) ##
 
     ## Show Step (start) ##
