@@ -855,62 +855,36 @@ class mainWindow(QMainWindow):
 
         last_step_list = copy.deepcopy(self.step_list)
         last_row_list = copy.deepcopy(self.step_list[-1]['row_list'])
-        unsolved_data_list = self.sort_sudoku_unsolved_data()
-
-        for unsolved_data_dic in unsolved_data_list:
-            cell_value = unsolved_data_dic['cell_value']
-            cell_row = unsolved_data_dic['cell_row']
-            cell_column = unsolved_data_dic['cell_column']
-            cell_block_num = (cell_row//3)*3 + cell_column//3
-
-            for key_number in list(cell_value):
-                self.step_list = copy.deepcopy(last_step_list)
-                self.update_step_list(['', '    第' + str(cell_row+1) + '行第' + str(cell_column+1) + '列，尝试数字' + str(key_number) + '。  （' + str(cell_value) + ' -> ' + str(key_number) + '）'])
-                last_step_list = copy.deepcopy(self.step_list)
-
-                self.update_sudoku_table(last_row_list)
-                self.sudoku_table.item(cell_row, cell_column).setText(key_number)
-                self.update_step_list()
-               
-                if (not self.fill_cell_possible_numbers(specified_row=cell_row)) or (not self.fill_cell_possible_numbers(specified_column=cell_column)) or (not self.fill_cell_possible_numbers(specified_block_num=cell_block_num)):
-                    self.step_list = copy.deepcopy(last_step_list)
-                    self.update_step_list(['    尝试失败（尝试数字不合理）',])
-                    last_step_list = copy.deepcopy(self.step_list)
-                    continue
-
-                if self.solve_sudoku_with_basic_methods():
-                    return(True)
-                else:
-                    self.step_list = copy.deepcopy(last_step_list)
-                    self.update_step_list(['    尝试失败（找不到最终解）',])
-                    last_step_list = copy.deepcopy(self.step_list)
-                    continue
-
-        return(False)
-
-    def sort_sudoku_unsolved_data(self):
-        """
-        parse unsolved sudoku data, sort them with the number of cell possible numbers.
-        """
-        self.update_step_list(['', '> 遍历未解的单元格，按照每个单元格可能数字的多少排序。'])
-
-        self.get_sudoku_table_data()
-        unsolved_data_list = []
 
         for (row, row_list) in enumerate(self.sudoku_data_dic['row']):
             for (column, cell_value) in enumerate(row_list):
                 if len(list(cell_value)) > 1:
-                    unsolved_cell_dic = {'cell_value' : cell_value, 'cell_row' : row, 'cell_column' : column}
+                    block_num = (row//3)*3 + column//3
 
-                    if not unsolved_data_list:
-                        unsolved_data_list.append(unsolved_cell_dic)
-                    else:
-                        for (i, cell_dic) in enumerate(unsolved_data_list):
-                            if len(list(cell_dic['cell_value'])) > len(list(cell_value)):
-                                unsolved_data_list.insert(i, unsolved_cell_dic)
-                                break
+                    for key_number in list(cell_value):
+                        self.step_list = copy.deepcopy(last_step_list)
+                        self.update_step_list(['', '    第' + str(row+1) + '行第' + str(column+1) + '列，尝试数字' + str(key_number) + '。  （' + str(cell_value) + ' -> ' + str(key_number) + '）'])
+                        last_step_list = copy.deepcopy(self.step_list)
 
-        return(unsolved_data_list)
+                        self.update_sudoku_table(last_row_list)
+                        self.sudoku_table.item(row, column).setText(key_number)
+                        self.update_step_list()
+                       
+                        if (not self.fill_cell_possible_numbers(specified_row=row)) or (not self.fill_cell_possible_numbers(specified_column=column)) or (not self.fill_cell_possible_numbers(specified_block_num=block_num)):
+                            self.step_list = copy.deepcopy(last_step_list)
+                            self.update_step_list(['    尝试失败（尝试数字不合理）',])
+                            last_step_list = copy.deepcopy(self.step_list)
+                            continue
+
+                        if self.solve_sudoku_with_basic_methods():
+                            return(True)
+                        else:
+                            self.step_list = copy.deepcopy(last_step_list)
+                            self.update_step_list(['    尝试失败（找不到最终解）',])
+                            last_step_list = copy.deepcopy(self.step_list)
+                            continue
+
+        return(False)
     ## Solve Sudoku (end) ##
 
     ## Show Step (start) ##
