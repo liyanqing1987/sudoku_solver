@@ -103,6 +103,9 @@ class mainWindow(QMainWindow):
         generate_advanced_plus_test_data_action = QAction('生成测试数据(高级+)', self)
         generate_advanced_plus_test_data_action.triggered.connect(lambda:self.generate_test_data('advanced_plus'))
 
+        generate_super_test_data_action = QAction('生成测试数据(变态)', self)
+        generate_super_test_data_action.triggered.connect(lambda:self.generate_test_data('super'))
+
         clear_action = QAction('清空', self)
         clear_action.triggered.connect(self.clear_data)
 
@@ -111,6 +114,7 @@ class mainWindow(QMainWindow):
         setup_menu.addAction(generate_middle_test_data_action)
         setup_menu.addAction(generate_advanced_test_data_action)
         setup_menu.addAction(generate_advanced_plus_test_data_action)
+        setup_menu.addAction(generate_super_test_data_action)
         setup_menu.addAction(clear_action)
 
         # Help
@@ -222,6 +226,17 @@ class mainWindow(QMainWindow):
                                             ['4', ' ', ' ', ' ', ' ', '5', ' ', ' ', '8'],
                                             ['2', ' ', ' ', ' ', ' ', ' ', '3', '9', ' '],
                                            ],
+                         'super' : [
+                                    ['2', ' ', ' ', ' ', '6', ' ', ' ', ' ', '5'],
+                                    ['5', ' ', ' ', '4', ' ', ' ', ' ', ' ', ' '],
+                                    [' ', '6', ' ', ' ', ' ', ' ', '3', '4', ' '],
+                                    [' ', '2', ' ', ' ', ' ', ' ', ' ', '9', ' '],
+                                    [' ', ' ', '3', '1', '5', '8', ' ', ' ', '7'],
+                                    ['1', ' ', ' ', '6', ' ', ' ', ' ', ' ', ' '],
+                                    [' ', ' ', ' ', ' ', '8', '3', ' ', ' ', ' '],
+                                    [' ', ' ', ' ', ' ', '1', ' ', '5', ' ', ' '],
+                                    [' ', '5', ' ', ' ', ' ', ' ', '9', '6', ' '],
+                                   ],
                         }
 
         test_list = test_list_dic[mode]
