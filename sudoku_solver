@@ -389,13 +389,13 @@ class mainWindow(QMainWindow):
         """
         Generate self.main_tab -> self.step_frame.
         """
-        all_step_button = QPushButton('All Steps', self.step_frame)
+        all_step_button = QPushButton('一键解题', self.step_frame)
         all_step_button.clicked.connect(self.all_steps)
 
-        previous_step_button = QPushButton('Previous Step', self.step_frame)
+        previous_step_button = QPushButton('上一步', self.step_frame)
         previous_step_button.clicked.connect(self.previous_step)
 
-        next_step_button = QPushButton('Next Step', self.step_frame)
+        next_step_button = QPushButton('下一步', self.step_frame)
         next_step_button.clicked.connect(self.next_step)
 
         self.step_text = QTextEdit(self.step_frame)
