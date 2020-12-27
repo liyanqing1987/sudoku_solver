@@ -418,7 +418,7 @@ class mainWindow(QMainWindow):
         description_string = """* 数独规则：
    数独有9x9个单元格，部分单元格中已经填好数字，填补其它空白单元格，使每一行/每一列/每个色块都包含1-9这9个数字且不重复。
 * Sudoku Solver用法：
-   手工填入数独初始值（可以从https://www.sudoku-cn.com获取），点击“All Steps”或“Step By Step”来一次性或者分步获取数独结果。"""
+   手工填入数独初始值（可以从https://www.sudoku-cn.com获取），点击“一键解题”或“上一步/下一步”来一次性或者分步获取数独结果。"""
         description_text.insertPlainText(description_string)
         description_text.setFocusPolicy(Qt.NoFocus)
 
